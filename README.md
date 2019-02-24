@@ -16,7 +16,7 @@ bsp <bsp-file-name>
 ## Controls
 * Left mouse button 	- move forward
 * Right mouse button 	- look around
-* Left Shift 		- move backwards
+* Middle mouse button	- move backwards
 * S 			- Spawn in next spawn point
 
 
