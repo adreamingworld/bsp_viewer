@@ -380,16 +380,21 @@ int spawnPlayer(struct player* p, struct map *m, int spawn_dest)
 		}
 		if (!strcmp(prop->value, "info_player_deathmatch")) {
 			if (spawn_dest == found) {
-				float x,y,z;
-				float rz;
+				float x=0,y=0,z=0;
+				float rz=0;
 				prop = entityGetPropertyByName(e, "origin");
-				sscanf(prop->value, "%f %f %f", &x, &y, &z);
-				printf("origin: %s\n", prop->value);
+				if (prop) {
+					sscanf(prop->value, "%f %f %f", &x, &y, &z);
+					printf("origin: %s\n", prop->value);
+				} else printf("origin: none, defaulting to 0,0,0\n");
 
 				prop = entityGetPropertyByName(e, "angle");
-				sscanf(prop->value, "%f", &rz);
-				printf("angle: %s\n", prop->value);
-				z+=26; /*Height of the player?*/
+				if (prop) {
+					sscanf(prop->value, "%f", &rz);
+					printf("angle: %s\n", prop->value);
+				} else printf("angle: none, defaulting to 0\n");
+
+				z+=26; /*Height of the player's eyes?*/
 				/*We have to add 90 degrees for some reason, wrong matrix?*/
 				playerMove(p, x*SCALE,y*SCALE,z*SCALE, 0,0,rz+90);
 				return spawn_dest;
@@ -406,6 +411,23 @@ int spawnPlayer(struct player* p, struct map *m, int spawn_dest)
 
 	printf("Failed to spawn\n");
 	return 0;
+}
+
+void setup_icon(SDL_Window *w)
+{
+	SDL_Surface *surface;
+	char current_filename[] = "resources/icon.bmp";
+	char installed_filename[] = DATA_PATH"/icon.bmp";
+
+	surface = SDL_LoadBMP(installed_filename);
+
+	if (!surface) {
+		printf("Not installed? Trying in working directory\n");
+		surface = SDL_LoadBMP(current_filename);
+		if (!surface) return;
+	} else printf("Package is installed\n");
+
+	SDL_SetWindowIcon(w, surface);
 }
 
 int main(int argc, char *argv[])
@@ -445,6 +467,7 @@ bspLoadEntities(&bsp, &map);
 	SDL_GetCurrentDisplayMode(0, &dm);
 printf("Screen: %ix%i\n", dm.w, dm.h);
 	setup_opengl(dm.w, dm.h);
+	setup_icon(window);
 
 	int n_faces ;
 
@@ -484,6 +507,7 @@ printf("Screen: %ix%i\n", dm.w, dm.h);
 	float time_delta = 0;
 	unsigned int last_time;
 	spawnPlayer(&player, &map, spawn_point++); 
+	//playerMove(&player, 0,0,0,0,0,0);
 
 	while (!quit) {
 		last_time = SDL_GetTicks();

@@ -11,7 +11,7 @@ bin_PROGRAMS = bsp_viewer
 bsp_viewer_SOURCES = src/bsp.c
 
 # Data we want to include with our package.
-#pkgdata_DATA = resources/data.txt
+pkgdata_DATA = resources/icon.bmp
 
 # pkgdatadir is usuallu the /usr/local/share
 # where the above pkgdata_DATA will be stored
@@ -21,3 +21,6 @@ bsp_viewer_SOURCES = src/bsp.c
 bsp_viewer_CFLAGS = @SDL_CFLAGS@ -DDATA_PATH='"$(pkgdatadir)"'
 
 bsp_viewer_LDADD = @SDL_LIBS@ @GL_LIBS@
+
+uninstall-hook:
+	rm -rf $(pkgdatadir)
