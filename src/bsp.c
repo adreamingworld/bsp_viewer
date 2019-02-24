@@ -178,7 +178,7 @@ int setup_opengl(int w, int h)
 	SDL_GL_SetAttribute( SDL_GL_CONTEXT_MAJOR_VERSION, 1 );
 	SDL_GL_SetAttribute( SDL_GL_CONTEXT_MINOR_VERSION, 3 );
 	SDL_GL_SetAttribute(SDL_GL_CONTEXT_PROFILE_MASK, SDL_GL_CONTEXT_PROFILE_COMPATIBILITY);
-	
+w=1024;h=768;	
 	window = SDL_CreateWindow("Quake 3 BSP Viewer", 0, 0, w, h, SDL_WINDOW_OPENGL | SDL_WINDOW_BORDERLESS);	
 	context = SDL_GL_CreateContext(window);
 	if (context == NULL) {
@@ -505,7 +505,15 @@ printf("Screen: %ix%i\n", dm.w, dm.h);
 
 		//glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT );
 		//glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT );
-
+		/*Lighten*/
+		int j;
+		unsigned char* c=data;
+		for (j=0; j<128*128*3;j++) {
+			float i_c = c[j];
+			i_c *= 2.3;
+			if (i_c>255) i_c = 255;
+			c[j] = i_c;
+		}
 		glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, 128, 128, 0, GL_RGB, GL_UNSIGNED_BYTE, data); /*Load data*/
 	}
 
