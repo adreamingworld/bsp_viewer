@@ -4,8 +4,6 @@
 #include <stdio.h>
 #include <math.h>
 
-#include <GL/glu.h>
-
 #define SCALE 1
 #define SPEED (200.0*SCALE)
 
@@ -17,7 +15,7 @@ enum {
 	TEXTURES,
 	PLANES,
 	NODES,
-	LEAFS,
+	LEAVES,
 	LEAFFACES,
 	LEAFBRUSHES,
 	MODELS,
@@ -196,15 +194,12 @@ int setup_opengl(int w, int h)
 	glMatrixMode(GL_PROJECTION);
 	glLoadIdentity();
 	float ah = (float)h/(float)w;
-//	gluPerspective(75.0, (float)w/(float)h, 1.0, 9000.0);
-	glFrustum(-1, 1, -ah, ah, 1, 9000);
-//	glFrustum(-1, 1, -1, 1, 1, 10000);
+	glFrustum(-1, 1, -ah, ah, 1, 5000);
 	glMatrixMode(GL_MODELVIEW);
-  SDL_GL_SetSwapInterval(1);
-	//glPolygonMode(GL_BACK, GL_LINE);
+
 	glEnable(GL_DEPTH_TEST);
 	glEnable(GL_TEXTURE_2D);
-	//glEnable(GL_CULL_FACE);
+	glEnable(GL_CULL_FACE);
 	glCullFace(GL_FRONT);
 	checkSDLError(__LINE__);
 	return 0;
@@ -490,7 +485,6 @@ printf("Screen: %ix%i\n", dm.w, dm.h);
 	unsigned int last_time;
 	spawnPlayer(&player, &map, spawn_point++); 
 
-
 	while (!quit) {
 		last_time = SDL_GetTicks();
 		while (SDL_PollEvent(&event)) {
@@ -537,16 +531,33 @@ printf("Screen: %ix%i\n", dm.w, dm.h);
 			player.y -= time_delta*(SPEED*mat[6]);
 			player.z -= time_delta*(SPEED*mat[10]);
 		}
-		if (shift) {
+		//if (shift) {
+		if (mouse_state & SDL_BUTTON(SDL_BUTTON_MIDDLE)) {
 			player.x += time_delta*(SPEED*mat[2]);
 			player.y += time_delta*(SPEED*mat[6]);
 			player.z += time_delta*(SPEED*mat[10]);
 		}
 
-		for (i=0; i< n_faces; i++) {
+		int n_leaves;
+		n_leaves = bsp.directory[LEAVES].length/sizeof(struct bsp_leaf);
+		for (i=0; i<n_leaves; i++) {
+			struct bsp_leaf *leaves;
+			struct bsp_leaf *leaf;
 			struct bsp_face *faces;
+			int *leaffaces = bsp.directory[LEAFFACES].data;
+			int j;
+	
+			leaves = bsp.directory[LEAVES].data;
 			faces = bsp.directory[FACES].data;
-			drawBspFace(&faces[i], &bsp);
+			leaf = &leaves[i];
+			if (leaf->cluster <0) {
+				continue;
+			}
+			for (j=0; j<leaf->n_leaffaces;j++) {
+				int face_index;
+				face_index = leaffaces[leaf->leafface+j];
+				drawBspFace(&faces[face_index], &bsp);
+			}
 		}
 
 		SDL_GL_SwapWindow(window);
