@@ -1,6 +1,8 @@
 # Quake 3 BSP Viewer
 A simple Quake 3 BSP viewer.
 
+![Screenshot](screenshots/screenshot.bmp?raw=true)
+
 ## Building
 ```
 autoreconf -vi

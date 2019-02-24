@@ -429,6 +429,19 @@ void setup_icon(SDL_Window *w)
 
 	SDL_SetWindowIcon(w, surface);
 }
+void take_screenshot(SDL_Window *window)
+{
+	int w,h;
+	SDL_Surface * image;
+
+	SDL_GetWindowSize(window, &w, &h);
+
+	image = SDL_CreateRGBSurface(SDL_SWSURFACE, w, h, 24, 0x000000FF, 0x0000FF00, 0x00FF0000, 0);
+	glReadPixels(0, 0, w, h, GL_RGB, GL_UNSIGNED_BYTE, image->pixels);
+
+	SDL_SaveBMP(image, "screenshot.bmp");
+	SDL_FreeSurface(image);
+}
 
 int main(int argc, char *argv[])
 {
@@ -516,6 +529,10 @@ printf("Screen: %ix%i\n", dm.w, dm.h);
 				case SDL_KEYDOWN:
 					switch(event.key.keysym.sym) {
 						case SDLK_s: spawn_point = spawnPlayer(&player, &map, spawn_point); spawn_point++; break;
+						case SDLK_F1: 
+							take_screenshot(window);
+
+							break;
 						case SDLK_ESCAPE: quit = 1; break;
 						case SDLK_LSHIFT: shift=1; break;
 					}
