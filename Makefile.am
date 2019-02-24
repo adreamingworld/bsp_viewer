@@ -18,6 +18,6 @@ bsp_viewer_SOURCES = src/bsp.c
 # we need to make it so the source code can 
 # access this string. So we pass is via the
 # compiler here.
-hello_CFLAGS = @SDL_CFLAGS@ -DDATA_PATH='"$(pkgdatadir)"'
+bsp_viewer_CFLAGS = @SDL_CFLAGS@ -DDATA_PATH='"$(pkgdatadir)"'
 
-hello_LDADD = @SDL_LIBS@
+bsp_viewer_LDADD = @SDL_LIBS@ @GL_LIBS@

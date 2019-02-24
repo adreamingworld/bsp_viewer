@@ -165,10 +165,9 @@ int bspLoad(struct bsp  *bsp, char *filename)
 		fseek(fp, ent->offset, SEEK_SET);
 		ent->data = malloc(ent->length);
 		fread(ent->data, 1, ent->length, fp);
-		printf("i: %02i ", i);
 		fseek(fp, position, SEEK_SET);
 
-		printf("lump [%02i] %7i, %7i\n", i, ent->offset, ent->length);
+		//printf("lump [%02i] %7i, %7i\n", i, ent->offset, ent->length);
 	}
 
 	return 0;
@@ -483,13 +482,13 @@ printf("Screen: %ix%i\n", dm.w, dm.h);
 	for (i=0; i<bsp.directory[TEXTURES].length/sizeof(struct texture); i++) {
 		struct texture *t;
 		t = &((struct texture *)bsp.directory[TEXTURES].data)[i];
-		printf("Texture[%i]: %s\n", i, t->name);
+	//	printf("Texture[%i]: %s\n", i, t->name);
 	}
 
-int shift = 0;
-float time_delta = 0;
-unsigned int last_time;
-spawnPlayer(&player, &map, spawn_point++); 
+	int shift = 0;
+	float time_delta = 0;
+	unsigned int last_time;
+	spawnPlayer(&player, &map, spawn_point++); 
 
 
 	while (!quit) {

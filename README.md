@@ -1,6 +1,13 @@
 # Quake 3 BSP Viewer
 A simple Quake 3 BSP viewer.
 
+## Building
+```
+	autoreconf -vi
+	./configure
+	make
+```
+
 ## Executing
 ```
 	bsp <bsp-file-name>
