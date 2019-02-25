@@ -208,6 +208,61 @@ int setup_opengl(int w, int h)
 	checkSDLError(__LINE__);
 	return 0;
 }
+/***
+	1	2	3
+	+---c---+---c---+
+	|   |   |   |   |
+	|   |   |   |   |
+	c---c---c---c---c
+	|   |   |   |   |
+	|   |   |   |   |
+	c---c---c---c---c
+
+	0	1	2
+	0.--1---2.--3---4.
+	|   |   |   |   |
+	|   |   |   |   |
+	5---6---7---8---9
+	|   |   |   |   |
+	|   |   |   |   |
+	10.-11--12.-13--14.
+	|   |   |   |   |
+	|   |   |   |   |
+	15--16--17--18--19
+	|   |   |   |   |
+	|   |   |   |   |
+	20.-21--22.-23--24.
+***/
+void drawPatch(int w, int h, struct bsp_vertex *verts, int n_verts)
+{
+	int pw = (w-1)/2;
+	int ph = (h-1)/2;
+	int i;
+glColor3f(1,0,0);
+	for (i=0; i<pw*ph; i++) {
+		int px = i%pw;
+		int py = i/pw;
+		int pind_x = px*2;
+		int pind_y = (py*2)*w;
+		int index = pind_x+pind_y;
+		struct bsp_vertex *v[4];
+		v[3] = &verts[index];
+		v[2] = &verts[index+2];
+		v[1] = &verts[index+2+(w*2)];
+		v[0] = &verts[index+(w*2)];
+
+		glBegin(GL_QUADS);
+			int j;
+			for (j=0;j<4;j++)
+				glVertex3f(
+					v[j]->position[0],
+					v[j]->position[1],
+					v[j]->position[2]
+					);
+		glEnd();
+	}
+glColor3f(1,1,1);
+}
 
 void drawBspFace(struct bsp_face *face, struct bsp *bsp)
 {
@@ -225,9 +280,13 @@ void drawBspFace(struct bsp_face *face, struct bsp *bsp)
 
 	total = face->n_meshverts;
 	/*Draw all meshverts*/
+	int normals=0;
 	switch (face->type) {
+		case 3: /*Model mesh has a normal*/
+			normals = 1;
+			glEnable(GL_LIGHTING);
+			glEnable(GL_LIGHT0);
 		case 1:
-		case 3:
 			if (face->lm_index >= 0)
 				glBindTexture(GL_TEXTURE_2D, lm_texture_ids[face->lm_index]);
 			else glBindTexture(GL_TEXTURE_2D,0);
@@ -236,12 +295,17 @@ void drawBspFace(struct bsp_face *face, struct bsp *bsp)
 				struct bsp_vertex *vertex;
 				int offset = meshverts[face->meshvert+i];
 				vertex = &vertices[base + offset];
+				if (normals) glNormal3f(vertex->normal[0], vertex->normal[1], vertex->normal[2]);
 				glTexCoord2f(vertex->texcoord[1][0],vertex->texcoord[1][1] );
 				glVertex3f(vertex->position[0], vertex->position[1], vertex->position[2] );
 			}
 			glEnd();
+			if (normals) {
+				glDisable(GL_LIGHTING);
+			}
 			break;
 		case 2: /*Patch - is not in the mesh verts?*/
+			drawPatch(face->size[0],face->size[1], &vertices[face->vertex], face->n_vertexes);
 			
 			break;
 	}
