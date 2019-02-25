@@ -20,7 +20,7 @@ pkgdata_DATA = resources/icon.bmp
 # compiler here.
 bsp_viewer_CFLAGS = @SDL_CFLAGS@ -DDATA_PATH='"$(pkgdatadir)"'
 
-bsp_viewer_LDADD = @SDL_LIBS@ @GL_LIBS@
+bsp_viewer_LDADD = @SDL_LIBS@ @GL_LIBS@ @IL_LIBS@
 
 uninstall-hook:
 	rm -rf $(pkgdatadir)

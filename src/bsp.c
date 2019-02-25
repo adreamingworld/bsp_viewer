@@ -4,11 +4,15 @@
 #include <stdio.h>
 #include <math.h>
 
+#include <IL/il.h>
+#include <IL/ilut.h>
+
 #define SCALE 1
 #define SPEED (200.0*SCALE)
 
 SDL_Window *window;
 unsigned int *lm_texture_ids;
+unsigned int il_image_id;
 
 enum {
 	ENTITIES,
@@ -178,7 +182,7 @@ int setup_opengl(int w, int h)
 	SDL_GL_SetAttribute( SDL_GL_CONTEXT_MAJOR_VERSION, 1 );
 	SDL_GL_SetAttribute( SDL_GL_CONTEXT_MINOR_VERSION, 3 );
 	SDL_GL_SetAttribute(SDL_GL_CONTEXT_PROFILE_MASK, SDL_GL_CONTEXT_PROFILE_COMPATIBILITY);
-w=1024;h=768;	
+//w=1024;h=768;	
 	window = SDL_CreateWindow("Quake 3 BSP Viewer", 0, 0, w, h, SDL_WINDOW_OPENGL | SDL_WINDOW_BORDERLESS);	
 	context = SDL_GL_CreateContext(window);
 	if (context == NULL) {
@@ -432,15 +436,23 @@ void setup_icon(SDL_Window *w)
 void take_screenshot(SDL_Window *window)
 {
 	int w,h;
-	SDL_Surface * image;
-
+	void *pixels;
+	
+	/* Get image of OpenGL display */
 	SDL_GetWindowSize(window, &w, &h);
+	pixels = malloc(w*h*3);
+	glPixelStorei(GL_PACK_ALIGNMENT, 1);
+	glReadPixels(0, 0, w, h, GL_RGB, GL_UNSIGNED_BYTE, pixels);
 
-	image = SDL_CreateRGBSurface(SDL_SWSURFACE, w, h, 24, 0x000000FF, 0x0000FF00, 0x00FF0000, 0);
-	glReadPixels(0, 0, w, h, GL_RGB, GL_UNSIGNED_BYTE, image->pixels);
+	/* Use IL to save png */
+  	// w,h,depth(3d image), channels
+	ilTexImage(w, h, 1, 3, IL_RGB, IL_UNSIGNED_BYTE, pixels);
+	ilSaveImage("screenshot.png");
+	printf("Screenshot saved\n");
 
-	SDL_SaveBMP(image, "screenshot.bmp");
-	SDL_FreeSurface(image);
+	/* Free image data */
+	free(pixels);
+
 }
 
 int main(int argc, char *argv[])
@@ -479,6 +491,10 @@ bspLoadEntities(&bsp, &map);
 	SDL_DisplayMode dm;
 	SDL_GetCurrentDisplayMode(0, &dm);
 printf("Screen: %ix%i\n", dm.w, dm.h);
+	ilEnable(IL_FILE_OVERWRITE);
+	il_image_id = ilGenImage();
+	ilBindImage(il_image_id);
+	ilInit();
 	setup_opengl(dm.w, dm.h);
 	setup_icon(window);
 
@@ -615,6 +631,7 @@ printf("Screen: %ix%i\n", dm.w, dm.h);
 		time_delta = (SDL_GetTicks() - last_time)/1000.0;
 	}
 
+	ilDeleteImage(il_image_id);
 	SDL_DestroyWindow(window);
 	SDL_Quit();
 	return 0;
