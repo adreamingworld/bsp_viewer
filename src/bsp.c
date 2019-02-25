@@ -491,10 +491,10 @@ bspLoadEntities(&bsp, &map);
 	SDL_DisplayMode dm;
 	SDL_GetCurrentDisplayMode(0, &dm);
 printf("Screen: %ix%i\n", dm.w, dm.h);
+	ilInit();
 	ilEnable(IL_FILE_OVERWRITE);
 	il_image_id = ilGenImage();
 	ilBindImage(il_image_id);
-	ilInit();
 	setup_opengl(dm.w, dm.h);
 	setup_icon(window);
 
