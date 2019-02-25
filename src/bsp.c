@@ -13,6 +13,7 @@
 SDL_Window *window;
 unsigned int *lm_texture_ids;
 unsigned int il_image_id;
+int g_bezier_steps = 4;
 
 enum {
 	ENTITIES,
@@ -290,15 +291,13 @@ void texlerp(float tc0[2], float tc1[2], float tc2[2], float tc3[2]
 	*t = LERP(lefty, righty, fx);
 }
 
-#define STEPS 8
-void drawPatch2(int w, int h, struct bsp_vertex *verts, int n_verts)
+void drawPatch(int w, int h, struct bsp_vertex *verts, int n_verts)
 {
 	int pw = (w-1)/2;
 	int ph = (h-1)/2;
 	int i,j;
-	float step_size = 1.0f /(STEPS);
+	float step_size = 1.0f /(g_bezier_steps);
 
-//glColor3f(1,0,0);
 	glPointSize(4);
 	glBegin(GL_TRIANGLES);
 	for (i=0; i<pw*ph; i++) {
@@ -315,25 +314,42 @@ void drawPatch2(int w, int h, struct bsp_vertex *verts, int n_verts)
 		ov[0] = &verts[index+(w*2)];
 
 		v = &verts[index];
-		glDisable(GL_CULL_FACE);
+			//Texture coords
+			float tc0[2];
+			float tc1[2];
+			float tc2[2];
+			float tc3[2];
+			float tcf[4][2];
+			float s[4],t[4];
 
-		for (j=0; j<STEPS*STEPS; j++) {
+			tc3[0] = ov[0]->texcoord[1][0];
+			tc3[1] = ov[0]->texcoord[1][1];
+			tc2[0] = ov[1]->texcoord[1][0];
+			tc2[1] = ov[1]->texcoord[1][1];
+			tc1[0] = ov[2]->texcoord[1][0];
+			tc1[1] = ov[2]->texcoord[1][1];
+			tc0[0] = ov[3]->texcoord[1][0];
+			tc0[1] = ov[3]->texcoord[1][1];
+
+		for (j=0; j<g_bezier_steps*g_bezier_steps; j++) {
 			float fx[4];
 			float fy[4];
-			fx[0] = (j%STEPS) * step_size;
-			fx[1] = (j%STEPS) * step_size+step_size;
-			fx[2] = (j%STEPS) * step_size+step_size;
-			fx[3] = (j%STEPS) * step_size;
+			fx[0] = (j%g_bezier_steps) * step_size;
+			fx[1] = (j%g_bezier_steps) * step_size+step_size;
+			fx[2] = (j%g_bezier_steps) * step_size+step_size;
+			fx[3] = (j%g_bezier_steps) * step_size;
 
-			fy[0] = (j/STEPS) * step_size;
-			fy[1] = (j/STEPS) * step_size;
-			fy[2] = (j/STEPS) * step_size+step_size;
-			fy[3] = (j/STEPS) * step_size+step_size;
-			/***
-				0 1 2
-				3 4 5
-				6 7 8
-			***/
+			fy[0] = (j/g_bezier_steps) * step_size;
+			fy[1] = (j/g_bezier_steps) * step_size;
+			fy[2] = (j/g_bezier_steps) * step_size+step_size;
+			fy[3] = (j/g_bezier_steps) * step_size+step_size;
+			
+			/*Calculate texcoords*/
+			texlerp(tc0, tc1, tc2, tc3, fx[0], fy[0], &s[0], &t[0]);
+			texlerp(tc0, tc1, tc2, tc3, fx[1], fy[1], &s[1], &t[1]);
+			texlerp(tc0, tc1, tc2, tc3, fx[2], fy[2], &s[2], &t[2]);
+			texlerp(tc0, tc1, tc2, tc3, fx[3], fy[3], &s[3], &t[3]);
+
 			float c[3][3];
 			float f[4][3];
 			struct bsp_vertex cv[3];
@@ -355,27 +371,6 @@ void drawPatch2(int w, int h, struct bsp_vertex *verts, int n_verts)
 				cv[2].position[2] = c[2][2];
 				curve(f[k], cv, l_fy);
 			}
-			//Texture coords
-			float tc0[2];
-			float tc1[2];
-			float tc2[2];
-			float tc3[2];
-			float tcf[4][2];
-			float s[4],t[4];
-
-			tc3[0] = ov[0]->texcoord[1][0];
-			tc3[1] = ov[0]->texcoord[1][1];
-			tc2[0] = ov[1]->texcoord[1][0];
-			tc2[1] = ov[1]->texcoord[1][1];
-			tc1[0] = ov[2]->texcoord[1][0];
-			tc1[1] = ov[2]->texcoord[1][1];
-			tc0[0] = ov[3]->texcoord[1][0];
-			tc0[1] = ov[3]->texcoord[1][1];
-
-			texlerp(tc0, tc1, tc2, tc3, fx[0], fy[0], &s[0], &t[0]);
-			texlerp(tc0, tc1, tc2, tc3, fx[1], fy[1], &s[1], &t[1]);
-			texlerp(tc0, tc1, tc2, tc3, fx[2], fy[2], &s[2], &t[2]);
-			texlerp(tc0, tc1, tc2, tc3, fx[3], fy[3], &s[3], &t[3]);
 
 			//Top
 			glTexCoord2f(s[3], t[3]);
@@ -394,39 +389,6 @@ void drawPatch2(int w, int h, struct bsp_vertex *verts, int n_verts)
 		}
 	}
 	glEnd();
-glColor3f(1,1,1);
-}
-void drawPatch(int w, int h, struct bsp_vertex *verts, int n_verts)
-{
-	int pw = (w-1)/2;
-	int ph = (h-1)/2;
-	int i;
-	float step_size = 1.0f /STEPS;
-
-glColor3f(1,0,0);
-	for (i=0; i<pw*ph; i++) {
-		int px = i%pw;
-		int py = i/pw;
-		int pind_x = px*2;
-		int pind_y = (py*2)*w;
-		int index = pind_x+pind_y;
-		struct bsp_vertex *v[4];
-		v[3] = &verts[index];
-		v[2] = &verts[index+2];
-		v[1] = &verts[index+2+(w*2)];
-		v[0] = &verts[index+(w*2)];
-
-		glBegin(GL_QUADS);
-			int j;
-			for (j=0;j<4;j++)
-				glVertex3f(
-					v[j]->position[0],
-					v[j]->position[1],
-					v[j]->position[2]
-					);
-		glEnd();
-	}
-glColor3f(1,1,1);
 }
 
 void drawBspFace(struct bsp_face *face, struct bsp *bsp)
@@ -446,15 +408,16 @@ void drawBspFace(struct bsp_face *face, struct bsp *bsp)
 	total = face->n_meshverts;
 	/*Draw all meshverts*/
 	int normals=0;
+	if (face->lm_index >= 0)
+		glBindTexture(GL_TEXTURE_2D, lm_texture_ids[face->lm_index]);
+	else glBindTexture(GL_TEXTURE_2D,0);
+
 	switch (face->type) {
 		case 3: /*Model mesh has a normal*/
 			normals = 1;
 			glEnable(GL_LIGHTING);
 			glEnable(GL_LIGHT0);
 		case 1:
-			if (face->lm_index >= 0)
-				glBindTexture(GL_TEXTURE_2D, lm_texture_ids[face->lm_index]);
-			else glBindTexture(GL_TEXTURE_2D,0);
 			glBegin(GL_TRIANGLES);
 			for (i=0; i<total; i++) {
 				struct bsp_vertex *vertex;
@@ -470,10 +433,7 @@ void drawBspFace(struct bsp_face *face, struct bsp *bsp)
 			}
 			break;
 		case 2: /*Patch - is not in the mesh verts?*/
-			if (face->lm_index >= 0)
-				glBindTexture(GL_TEXTURE_2D, lm_texture_ids[face->lm_index]);
-			else glBindTexture(GL_TEXTURE_2D,0);
-			drawPatch2(face->size[0],face->size[1], &vertices[face->vertex], face->n_vertexes);
+			drawPatch(face->size[0],face->size[1], &vertices[face->vertex], face->n_vertexes);
 			
 			break;
 	}
@@ -784,6 +744,8 @@ printf("Screen: %ix%i\n", dm.w, dm.h);
 			switch (event.type) {
 				case SDL_KEYDOWN:
 					switch(event.key.keysym.sym) {
+						case SDLK_UP: g_bezier_steps++; break;
+						case SDLK_DOWN: g_bezier_steps--; if (g_bezier_steps < 1) g_bezier_steps = 1; break;
 						case SDLK_s: spawn_point = spawnPlayer(&player, &map, spawn_point); spawn_point++; break;
 						case SDLK_F1: 
 							take_screenshot(window);

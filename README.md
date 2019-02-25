@@ -28,6 +28,8 @@ bsp <bsp-file-name>
 * Right mouse button 	- look around
 * Middle mouse button	- move backwards
 * S 			- Spawn in next spawn point
+* Up arrow		- Increase bezier patch detail level
+* Down arrow		- Decrease bezier patch detail level 
 * F1			- Take a screenshot (Currently saves to working directory)
 
 
