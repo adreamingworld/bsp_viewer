@@ -1,1 +1,2 @@
 autoreconf -vi
+./configure
