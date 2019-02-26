@@ -8,7 +8,7 @@ See a list of [current issues](ISSUES.md) with the project.
 ## Compiling
 ### Run-time Dependencies
 * [DevIL](http://openil.sourceforge.net)
-* [SDL](https://www.libsdl.org) (=> 2.0)
+* [SDL](https://www.libsdl.org) (>= 2.0)
 
 ### Build-time Dependencies
 * Autotools - automake, autoconf
