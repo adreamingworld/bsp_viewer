@@ -1,6 +1,8 @@
 # Quake 3 BSP Viewer
 A simple Quake 3 BSP viewer.
 
+See a list of [current issues](ISSUES.md) with the project.
+
 ![Screenshot](screenshots/screenshot.png?raw=true)
 
 ## Compiling
