@@ -12,7 +12,7 @@
 SDL_Window *window=0;
 unsigned int *lm_texture_ids=0;
 unsigned int il_image_id=0;
-int g_bezier_steps = 4;
+int g_bezier_steps = 8;
 
 enum {
 	ENTITIES,
@@ -34,10 +34,22 @@ enum {
 	VISDATA
 };
 
+struct bsp_plane {
+	float normal[3];
+	float dist;
+};
+
 struct texture {
 	char name[64];
 	int flags;
 	int contents;
+};
+
+struct bsp_node {
+	int plane;
+	int children[2]; /*negative if leaf*/
+	int mins[3];
+	int maxs[3];
 };
 
 struct bsp_vertex {
@@ -140,7 +152,7 @@ int bspLoad(struct bsp  *bsp, char *filename)
 {
 	FILE *fp=0;
 	int i=0;
-	char magic[4]={0};
+	unsigned int magic = 0;
 	int version=0;
 
 	fp = fopen(filename, "rb");
@@ -150,10 +162,17 @@ int bspLoad(struct bsp  *bsp, char *filename)
 	}
 
 	/*Magic number*/
-	fread(magic, 4, 1, fp);
+	fread(&magic, 4, 1, fp);
+	if (magic != 0x50534249) {
+		error(-1, "probably not a BSP file");
+	}
+
 	fread(&version, 4, 1, fp);
-	printf("Magic number: %.4s\n", magic);
+	printf("Magic number: %.4s\n", (char *) &magic);
 	printf("Version: %i\n", version);
+	if (version != 46) {
+		error(-1, "only version 46 supported.");
+	}
 
 	for (i=0; i<17; i++) {
 		unsigned int position = 0;
@@ -615,9 +634,9 @@ void setup_icon(SDL_Window *w)
 	surface = SDL_LoadBMP(installed_filename);
 
 	if (!surface) {
-		printf("Not installed? Trying in working directory\n");
 		surface = SDL_LoadBMP(current_filename);
 		if (!surface) return;
+		printf("Package is not installed, running from working directory.\n");
 	} else printf("Package is installed\n");
 
 	SDL_SetWindowIcon(w, surface);
@@ -642,9 +661,76 @@ void take_screenshot(SDL_Window *window)
 	/* Free image data */
 	free(pixels);
 }
+/***
+	A = point
+	B = point on the plane
+	P = plane normal
+	dotProduct(A-B, P);
+
+	n = normal
+***/
+int infrontOfPlane(float n[3], float pos[3], float dist)
+{
+	float result = (pos[0])*n[0] - (-pos[1])*n[1] - (-pos[2])*n[2] - dist;
+	if (result > 0) return 1;
+	return 0;
+}
+
+int findCluster(struct bsp *bsp, float x, float y, float z)
+{
+	struct bsp_node* nodes = 0;
+	struct bsp_plane *planes = 0;
+	struct bsp_leaf *leaves = 0;
+	unsigned int n_nodes = 0;
+	struct bsp_node *node = 0;
+	struct bsp_leaf *leaf = 0;
+	float pos[3] = {x,y,z};
+
+	leaves = bsp->directory[LEAVES].data;
+	planes = bsp->directory[PLANES].data;
+	nodes = bsp->directory[NODES].data;
+	n_nodes = bsp->directory[NODES].length/sizeof(struct bsp_node);
+	node = &nodes[0];
+
+	while(1) {
+		struct bsp_plane *plane = 0;
+
+		plane = &planes[node->plane];
+
+		if (infrontOfPlane(plane->normal, pos, plane->dist)) {
+			if (node->children[0] >= 0) {
+				node = &nodes[node->children[0]];
+			} else {
+				leaf = &leaves[-(node->children[0]+1)];
+				break;
+			}
+		} else {
+			if (node->children[1] >= 0) {
+				node = &nodes[node->children[1]];
+			} else {
+				leaf = &leaves[-(node->children[1]+1)];
+				break;
+			}
+		}
+	}
+	return leaf->cluster;
+}
+
+int clusterIsVisible(int current_cluster, int test_cluster, void *visdata) 
+{
+//	int n_vecs = *((int *)visdata);
+	int sz_vecs = *((int *)(visdata+4));
+	unsigned char *vecs = (unsigned char *)(visdata+8);
+
+	if (1<<(current_cluster%8) & vecs[test_cluster*sz_vecs + (current_cluster/8)])
+		return 1;
+
+	return 0;
+}
 
 int main(int argc, char *argv[])
 {
+	int pvs_enabled=1;
 	SDL_Event event = {0};
 	unsigned int spawn_point = 0;
 	int quit = 0;
@@ -732,6 +818,7 @@ printf("Screen: %ix%i\n", dm.w, dm.h);
 	unsigned int last_time;
 	spawnPlayer(&player, &map, spawn_point++); 
 	//playerMove(&player, 0,0,0,0,0,0);
+	int current_cluster = 0;
 
 	while (!quit) {
 		last_time = SDL_GetTicks();
@@ -739,6 +826,7 @@ printf("Screen: %ix%i\n", dm.w, dm.h);
 			switch (event.type) {
 				case SDL_KEYDOWN:
 					switch(event.key.keysym.sym) {
+						case SDLK_p: pvs_enabled = !pvs_enabled; break;
 						case SDLK_UP: g_bezier_steps++; break;
 						case SDLK_DOWN: g_bezier_steps--; if (g_bezier_steps < 1) g_bezier_steps = 1; break;
 						case SDLK_s: spawn_point = spawnPlayer(&player, &map, spawn_point); spawn_point++; break;
@@ -794,6 +882,9 @@ printf("Screen: %ix%i\n", dm.w, dm.h);
 
 		int n_leaves;
 		n_leaves = bsp.directory[LEAVES].length/sizeof(struct bsp_leaf);
+		if (pvs_enabled)
+			current_cluster = findCluster(&bsp, player.x, player.y, player.z);
+
 		for (i=0; i<n_leaves; i++) {
 			struct bsp_leaf *leaves;
 			struct bsp_leaf *leaf;
@@ -805,6 +896,13 @@ printf("Screen: %ix%i\n", dm.w, dm.h);
 			faces = bsp.directory[FACES].data;
 			leaf = &leaves[i];
 			if (leaf->cluster <0) {
+				continue;
+			}
+			/*If pvs_enables and we are not outside 
+			  of a cluster and cluster is not visible 
+			  then just skip it.
+			*/
+			if (pvs_enabled && current_cluster != -1 && !clusterIsVisible(current_cluster, leaf->cluster, bsp.directory[VISDATA].data)) {
 				continue;
 			}
 			for (j=0; j<leaf->n_leaffaces;j++) {
