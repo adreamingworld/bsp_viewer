@@ -7,12 +7,11 @@
 #include <IL/il.h>
 #include <IL/ilut.h>
 
-#define SCALE 1
-#define SPEED (200.0*SCALE)
+#define SPEED (200.0)
 
-SDL_Window *window;
-unsigned int *lm_texture_ids;
-unsigned int il_image_id;
+SDL_Window *window=0;
+unsigned int *lm_texture_ids=0;
+unsigned int il_image_id=0;
 int g_bezier_steps = 4;
 
 enum {
@@ -139,10 +138,10 @@ void error(int e, char *string)
 
 int bspLoad(struct bsp  *bsp, char *filename)
 {
-	FILE *fp;
-	int i;
-	char magic[4];
-	int version;
+	FILE *fp=0;
+	int i=0;
+	char magic[4]={0};
+	int version=0;
 
 	fp = fopen(filename, "rb");
 	if (!fp) {
@@ -157,8 +156,9 @@ int bspLoad(struct bsp  *bsp, char *filename)
 	printf("Version: %i\n", version);
 
 	for (i=0; i<17; i++) {
-		unsigned int position;
-		struct directory_entry *ent;
+		unsigned int position = 0;
+		struct directory_entry *ent = 0;
+
 		ent = &bsp->directory[i];
 		fread(&bsp->directory[i].offset, 4, 1, fp);
 		fread(&bsp->directory[i].length, 4, 1, fp);
@@ -178,8 +178,8 @@ int bspLoad(struct bsp  *bsp, char *filename)
 
 int setup_opengl(int w, int h)
 {
-	int flags;
 	SDL_GLContext context = 0;
+	
 	SDL_GL_SetAttribute( SDL_GL_CONTEXT_MAJOR_VERSION, 1 );
 	SDL_GL_SetAttribute( SDL_GL_CONTEXT_MINOR_VERSION, 3 );
 	SDL_GL_SetAttribute(SDL_GL_CONTEXT_PROFILE_MASK, SDL_GL_CONTEXT_PROFILE_COMPATIBILITY);
@@ -189,10 +189,10 @@ int setup_opengl(int w, int h)
 	if (context == NULL) {
 		error(-1, "Failed to create context.");
 	}
-	int d;
+	int d=0;
 	SDL_GL_GetAttribute( SDL_GL_DEPTH_SIZE, &d);
 	printf("Depth buffer: %i\n", d);
-	int max_tunits;
+	int max_tunits=0;
 	glGetIntegerv(GL_MAX_COMBINED_TEXTURE_IMAGE_UNITS, &max_tunits);
 	printf("Max Texture Units: %i\n", max_tunits);
 
@@ -295,10 +295,9 @@ void drawPatch(int w, int h, struct bsp_vertex *verts, int n_verts)
 {
 	int pw = (w-1)/2;
 	int ph = (h-1)/2;
-	int i,j;
+	int i=0,j=0;
 	float step_size = 1.0f /(g_bezier_steps);
 
-	glPointSize(4);
 	glBegin(GL_TRIANGLES);
 	for (i=0; i<pw*ph; i++) {
 		int px = i%pw;
@@ -319,7 +318,6 @@ void drawPatch(int w, int h, struct bsp_vertex *verts, int n_verts)
 			float tc1[2];
 			float tc2[2];
 			float tc3[2];
-			float tcf[4][2];
 			float s[4],t[4];
 
 			tc3[0] = ov[0]->texcoord[1][0];
@@ -393,12 +391,12 @@ void drawPatch(int w, int h, struct bsp_vertex *verts, int n_verts)
 
 void drawBspFace(struct bsp_face *face, struct bsp *bsp)
 {
-	int *vert_offset = 0;
-	int total;
-	int i;
-	int base;
-	int *meshverts;
-	struct bsp_vertex *vertices;
+	int total=0;
+	int i=0;
+	int base=0;
+	int *meshverts=0;
+	struct bsp_vertex *vertices=0;
+	int normals=0;
 
 	vertices = bsp->directory[VERTEXES].data;
 	meshverts = bsp->directory[MESHVERTS].data;
@@ -407,7 +405,6 @@ void drawBspFace(struct bsp_face *face, struct bsp *bsp)
 
 	total = face->n_meshverts;
 	/*Draw all meshverts*/
-	int normals=0;
 	if (face->lm_index >= 0)
 		glBindTexture(GL_TEXTURE_2D, lm_texture_ids[face->lm_index]);
 	else glBindTexture(GL_TEXTURE_2D,0);
@@ -464,7 +461,8 @@ int get_string(char *string, char *dest)
 
 int bspLoadEntities(struct bsp *bsp, struct map *map)
 {
-	unsigned int entity_string_length;
+	struct entity *current_entity=0;
+	unsigned int entity_string_length=0;
 	unsigned pos = 0;
 	char *entity_string;
 	unsigned int in_entity = 0;
@@ -477,9 +475,8 @@ int bspLoadEntities(struct bsp *bsp, struct map *map)
 	map->entities = malloc(sizeof(struct entity));
 
 	while (pos < entity_string_length) {
-		struct entity *current_entity;
-		unsigned int count;
-		char c;
+		unsigned int count=0;
+		char c=0;
 
 		/*Get rid of whitespace between strings*/
 		while (isspace(entity_string[pos++]));
@@ -487,7 +484,8 @@ int bspLoadEntities(struct bsp *bsp, struct map *map)
 
 		/*Look for opening {*/
 		if (c == '{') { /*New entity*/
-			in_entity=1; pos++;
+			in_entity=1; 
+			pos++;
 
 			entity_count++;
 			map->entities = realloc(map->entities, sizeof(struct entity)*entity_count);
@@ -516,8 +514,8 @@ int bspLoadEntities(struct bsp *bsp, struct map *map)
 			pos += count;
 			//printf("%s = %s\n", prop, value);
 			
-			property->name = malloc(strlen(prop));
-			property->value = malloc(strlen(value));
+			property->name = malloc(strlen(prop) + 1);
+			property->value = malloc(strlen(value) + 1);
 			strcpy(property->name, prop);
 			strcpy(property->value, value);
 		}else pos++;
@@ -560,15 +558,14 @@ struct entity_property *entityGetPropertyByName(struct entity *e, char *name)
 */
 int spawnPlayer(struct player* p, struct map *m, int spawn_dest)
 {
-	int i;
+	int i=0;
 	int found=0;
 	printf("Spawning\n");
 
 	for (i=0; i<m->n_entities; i++) {
 		struct entity *e = &m->entities[i];
-		int j;
+		struct entity_property *prop = 0;
 
-		struct entity_property *prop;
 		prop = entityGetPropertyByName(e, "classname");
 		if (!prop) {
 			printf("Entity has no class name!!\n");
@@ -592,7 +589,7 @@ int spawnPlayer(struct player* p, struct map *m, int spawn_dest)
 
 				z+=26; /*Height of the player's eyes?*/
 				/*We have to add 90 degrees for some reason, wrong matrix?*/
-				playerMove(p, x*SCALE,y*SCALE,z*SCALE, 0,0,rz+90);
+				playerMove(p, x,y,z, 0,0,rz+90);
 				return spawn_dest;
 			}
 			found++;
@@ -611,7 +608,7 @@ int spawnPlayer(struct player* p, struct map *m, int spawn_dest)
 
 void setup_icon(SDL_Window *w)
 {
-	SDL_Surface *surface;
+	SDL_Surface *surface = 0;
 	char current_filename[] = "resources/icon.bmp";
 	char installed_filename[] = DATA_PATH"/icon.bmp";
 
@@ -627,8 +624,8 @@ void setup_icon(SDL_Window *w)
 }
 void take_screenshot(SDL_Window *window)
 {
-	int w,h;
-	void *pixels;
+	int w=0,h=0;
+	void *pixels=0;
 	
 	/* Get image of OpenGL display */
 	SDL_GetWindowSize(window, &w, &h);
@@ -644,18 +641,17 @@ void take_screenshot(SDL_Window *window)
 
 	/* Free image data */
 	free(pixels);
-
 }
 
 int main(int argc, char *argv[])
 {
+	SDL_Event event = {0};
 	unsigned int spawn_point = 0;
-	SDL_Event event;
 	int quit = 0;
-	struct bsp bsp;
-	struct map map;
-	char *filename ;
-	int i;
+	struct bsp bsp = {0};
+	struct map map = {0};
+	char *filename = 0;
+	int i = 0;
 	struct player player={0};
 
 	float identity[16] = {
@@ -670,7 +666,7 @@ int main(int argc, char *argv[])
 	printf("BSP Viewer\n");
 	bspLoad(&bsp, filename);
 
-FILE *fp_ents;
+FILE *fp_ents = 0;
 fp_ents = fopen("entities.txt", "wb");
 fprintf(fp_ents, "%s", bsp.directory[ENTITIES].data);
 fclose(fp_ents);
@@ -690,14 +686,12 @@ printf("Screen: %ix%i\n", dm.w, dm.h);
 	setup_opengl(dm.w, dm.h);
 	setup_icon(window);
 
-	int n_faces ;
+	int n_faces=0;
 
 	n_faces = bsp.directory[FACES].length/sizeof(struct bsp_face);
-
 	/*Load lightmaps into textures*/
-	unsigned int tex_id=0;
 
-	unsigned int n_lightmaps;
+	unsigned int n_lightmaps=0;
 
 	n_lightmaps = bsp.directory[LIGHTMAPS].length/(128*128*3);
 	lm_texture_ids = malloc(sizeof(unsigned int) * n_lightmaps);
@@ -706,7 +700,10 @@ printf("Screen: %ix%i\n", dm.w, dm.h);
 	glGenTextures(n_lightmaps, lm_texture_ids);		/*Generate*/
 
 	for (i=0; i<bsp.directory[LIGHTMAPS].length / (128*128*3); i++) {
+		int j=0;
 		void *data = bsp.directory[LIGHTMAPS].data + (128*128*3)*i;
+		unsigned char* c=data;
+
 		glBindTexture(GL_TEXTURE_2D, lm_texture_ids[i]); 	/*Bind*/
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
@@ -714,8 +711,6 @@ printf("Screen: %ix%i\n", dm.w, dm.h);
 		//glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT );
 		//glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT );
 		/*Lighten*/
-		int j;
-		unsigned char* c=data;
 		for (j=0; j<128*128*3;j++) {
 			float i_c = c[j];
 			i_c *= 2.3;
@@ -775,7 +770,7 @@ printf("Screen: %ix%i\n", dm.w, dm.h);
 		glGetFloatv(GL_MODELVIEW_MATRIX, mat);
 
 		int mx,my;
-		unsigned int mouse_state;
+		unsigned int mouse_state = 0;
 		mouse_state = SDL_GetRelativeMouseState(&mx, &my);
 		if (mouse_state & SDL_BUTTON(SDL_BUTTON_RIGHT)) {
 			player.rz -= mx/8.0;
