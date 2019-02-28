@@ -3,7 +3,7 @@ A simple Quake 3 BSP viewer.
 
 See a list of [current issues](docs/ISSUES.md) with the project.
 
-![Screenshot](screenshots/screenshot.png?raw=true)
+![Screenshot](resources/screenshot.png?raw=true)
 
 ## Compiling
 ### Run-time Dependencies
@@ -22,14 +22,20 @@ make
 
 ## Executing
 ```
-bsp <bsp-file-name>
+bsp -b <bsp-file-name>
+
+```
+### Command line options
+```
+-b <file name>		- BSP file to load.
+-d <display number>	- Which display to use. Defaults to 0.
 ```
 
 ## Controls
-* Left mouse button 	- move forward
-* Right mouse button 	- look around
-* Middle mouse button	- move backwards
-* S 			- Spawn in next spawn point
+* WASD		 	- move around
+* Mouse		 	- look around
+* r 			- Respawn in next spawn point
+* p 			- Toggle PVS culling
 * Up arrow		- Increase bezier patch detail level
 * Down arrow		- Decrease bezier patch detail level 
 * F1			- Take a screenshot (Currently saves to working directory)

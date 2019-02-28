@@ -12,6 +12,8 @@ bsp_viewer_SOURCES = src/bsp.c \
 			src/bsp.h \
 			src/error.c \
 			src/error.h \
+			src/options/options.c \
+			src/options/options.h \
 			src/main.c
 
 # Data we want to include with our package.
@@ -23,7 +25,6 @@ pkgdata_DATA = resources/icon.bmp
 # access this string. So we pass is via the
 # compiler here.
 bsp_viewer_CFLAGS = @SDL_CFLAGS@ -DDATA_PATH='"$(pkgdatadir)"'
-
 bsp_viewer_LDADD = @SDL_LIBS@ @GL_LIBS@ @IL_LIBS@
 
 uninstall-hook:
