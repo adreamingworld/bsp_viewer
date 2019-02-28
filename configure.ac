@@ -1,10 +1,17 @@
 AC_INIT([bsp_viewer], [1.0], [andy_ball7@hotmail.com], [], [adreamingworld.com])
-AC_CANONICAL_HOST
-AC_CANONICAL_TARGET
-AM_INIT_AUTOMAKE([foreign])
+
+#AC_CANONICAL_HOST
+#AC_CANONICAL_TARGET
+
+# Put auxiliary files in a tidy place
+AC_CONFIG_AUX_DIR(build-aux)
+
+AM_INIT_AUTOMAKE([-Wall -Werrer foreign])
 
 AC_PROG_CC
+
 AC_CONFIG_HEADERS([config.h])
+
 AC_CONFIG_FILES([Makefile])
 
 AC_CHECK_HEADERS([stdlib.h])
