@@ -7,11 +7,11 @@ set_option(struct option *option, const char *name,
 		int letter, int has_arg, char *arg,
 		int flag)
 	{
-		option->name = name;
-		option->letter = letter;
-		option->has_arg = has_arg;
-		option->arg = arg;
-		option->flag = flag;
+	option->name = name;
+	option->letter = letter;
+	option->has_arg = has_arg;
+	option->arg = arg;
+	option->flag = flag;
 	}
 
 int

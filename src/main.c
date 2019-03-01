@@ -11,6 +11,8 @@
 
 #define SPEED (300.0)
 
+char g_usage[] = {PACKAGE_STRING"\nusage:\n	"PACKAGE_NAME" [-b <bsp file name>] [-d <display>]"};
+
 unsigned int *g_lm_texture_ids=0;
 extern int g_bezier_steps;
 SDL_Window *g_window=0;
@@ -47,13 +49,11 @@ check_sdl_error(int line)
 	else printf("none\n");
 	}
 
-int
-setup_opengl(int w, int h, int x, int y)
+void
+setup_sdl(int w, int h, int x, int y)
 	{
 	SDL_GLContext context = 0;
-	int d=0;
-	int max_tunits=0;
-	
+
 	SDL_GL_SetAttribute( SDL_GL_CONTEXT_MAJOR_VERSION, 1 );
 	SDL_GL_SetAttribute( SDL_GL_CONTEXT_MINOR_VERSION, 3 );
 	SDL_GL_SetAttribute(SDL_GL_CONTEXT_PROFILE_MASK, SDL_GL_CONTEXT_PROFILE_COMPATIBILITY);
@@ -66,21 +66,27 @@ setup_opengl(int w, int h, int x, int y)
 		error(-1, "Failed to create context.");
 		}
 
-	SDL_GL_GetAttribute( SDL_GL_DEPTH_SIZE, &d);
-	printf("Depth buffer: %i\n", d);
+	}
+
+int
+setup_opengl(int w, int h, int x, int y)
+	{
+	int max_tunits=0;
+	float aspect = (float)h/(float)w;
+	
 	glGetIntegerv(GL_MAX_COMBINED_TEXTURE_IMAGE_UNITS, &max_tunits);
 	printf("Max Texture Units: %i\n", max_tunits);
 
 	glMatrixMode(GL_PROJECTION);
 	glLoadIdentity();
-	float ah = (float)h/(float)w;
-	glFrustum(-1, 1, -ah, ah, 1, 5000);
+	glFrustum(-1, 1, -aspect, aspect, 1, 5000);
 	glMatrixMode(GL_MODELVIEW);
 
 	glEnable(GL_DEPTH_TEST);
 	glEnable(GL_TEXTURE_2D);
 	glEnable(GL_CULL_FACE);
 	glCullFace(GL_FRONT);
+
 	check_sdl_error(__LINE__);
 
 	return 0;
@@ -320,7 +326,6 @@ main(int argc, char *argv[])
 		0,1,0,0,
 		0,0,0,1,
 		};	
-
 	struct option options[3] = {0};
 
 	/* Get command line options */
@@ -337,6 +342,10 @@ main(int argc, char *argv[])
 	}
 
 	filename = options[0].arg;
+	if (!filename) {
+		puts(g_usage);
+		return -1;
+	}
 	if (!check_file_exists(filename))
 		error(-1, "File doesn't exist.");
 
@@ -347,6 +356,7 @@ main(int argc, char *argv[])
 		error(-1, "Failed to init video");
 		}
 
+
 	ilInit();
 	ilEnable(IL_FILE_OVERWRITE);
 	g_il_image_id = ilGenImage();
@@ -355,6 +365,7 @@ main(int argc, char *argv[])
 	/* Set up which display to use */
 	SDL_DisplayMode dm;
 	printf("Using Display %i\n", display_index);
+
 	if (SDL_GetCurrentDisplayMode(display_index, &dm) != 0)
 		{
 		char e_string[128];
@@ -363,8 +374,10 @@ main(int argc, char *argv[])
 		}
 
 	printf("Screen[%i]: %ix%i\n", display_index, dm.w, dm.h);
+
 	SDL_Rect b_rect;
 	SDL_GetDisplayUsableBounds(display_index, &b_rect);
+	setup_sdl(dm.w, dm.h, b_rect.x, b_rect.y);
 	setup_opengl(dm.w, dm.h, b_rect.x, b_rect.y);
 	setup_icon(g_window);
 
@@ -582,13 +595,14 @@ main(int argc, char *argv[])
 
 		SDL_GL_SwapWindow(g_window);
 
-		SDL_Delay(10);
+		SDL_Delay(2);
 		time_delta = (SDL_GetTicks() - last_time)/1000.0;
 		}
 
 	ilDeleteImage(g_il_image_id);
 	SDL_DestroyWindow(g_window);
 	SDL_Quit();
+
 	return 0;
 	}
 

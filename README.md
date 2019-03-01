@@ -1,7 +1,8 @@
 # Quake 3 BSP Viewer
 A simple Quake 3 BSP viewer.
 
-See a list of [current issues](docs/ISSUES.md) with the project.
+* See a list of [current issues](docs/ISSUES.md) with the project.
+* [Todo](docs/TODO.md) list.
 
 ![Screenshot](resources/screenshot.png?raw=true)
 
@@ -23,7 +24,6 @@ make
 ## Executing
 ```
 bsp -b <bsp-file-name>
-
 ```
 ### Command line options
 ```
